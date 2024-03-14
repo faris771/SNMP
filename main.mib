@@ -1,66 +1,97 @@
-IP-MIB DEFINITIONS ::= BEGIN
+-- Definitions for managing a security system that monitors room entry and exit
+SECURITY-SYSTEM-MIB DEFINITIONS ::= BEGIN
 
 IMPORTS
-	MODULE-IDENTITY, OBJECT-TYPE, Integer32,
-	Counter32, IpAddress, mib-2	FROM SNMPv2-SMI
-	PhysAddress			FROM SNMPv2-TC
-	MODUL-COMPLIANCE, OBJECT-GROUP	FROM SNMPv2-COMF;
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Counter32, IpAddress,
+    mib-2
+    FROM SNMPv2-SMI
+    RowStatus
+    FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP
+    FROM SNMPv2-CONF;
 
-ip OBJECT IDENTIFIER ::= {1 3 6 1 3}
-
-
-peopleEntered OBJECT-TYPE
-  SYNTAX	Counter32
-  MAX-ACCESS	read-only
-  STATUS	current
-  DESCRIPTION	"The number of people that have entered the room since the counter was last reset."
-  ::= {ip 1} 
-
-peopleLeft OBJECT-TYPE
-  SYNTAX	Counter32
-  MAX-ACCESS	read-only
-  STATUS	current
-  DESCRIPTION	"The number of people that have left the room since the counter was last reset."
-  ::= {ip 2} 
+-- Module identity
+securitySystemMIB MODULE-IDENTITY
+    LAST-UPDATED "YYYYMMDD0000Z"
+    ORGANIZATION "Your Organization"
+    CONTACT-INFO "Your Contact Info"
+    DESCRIPTION "MIB module for managing a security system monitoring room entry and exit."
+    ::= { mib-2 13613 } -- Change 9999 to a unique number
 
 
+-- Additional object identifier for IP address
+securitySystemObjects OBJECT IDENTIFIER ::= { 1 3 6 1 3 }
 
-deviceIpAddress OBJECT-TYPE
-  SYNTAX	IpAddress
-  MAX-ACCESS	read-only
-  STATUS	current
-  DESCRIPTION	"The IP address of the device managing room entry/exit information."
-  ::= { ip 3 }
+-- Managed objects
+-- the structure which contains the number of people in the room
+securitySystemEnterCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Number of people that have entered the room."
+    ::= { securitySystemObjects 1 }
 
+-- the structure which contains the number of people that have left the room
+securitySystemExitCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Number of people that have left the room."
+    ::= { securitySystemObjects 2 }
 
+-- the structure which returns the Device's IP Address
+securitySystemIpAddress OBJECT-TYPE
+    SYNTAX IpAddress
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Device's IP address."
+    ::= { securitySystemObjects 3 }
 
-historicalDataEntry  OBJECT-TYPE
-  SYNTAX	Counter32
-  MAX-ACCESS	not-accessible
-  STATUS	current
-  DESCRIPTION
-    "An entry containing historical data about daily entries and exits."
-  INDEX {historicalDataEntry }
-  ::= {historicalDataEntry  1}
+---------------------------------------Table------------------------- 
+-- Historical data table
+securitySystemHistoryTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF SecuritySystemHistoryEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION "Table containing historical data of room entry and exit."
+    ::= { securitySystemObjects 4 }
+	
+-- THIS STRUCTURE FOR specifying the objects that uniquely identify each row in the table.	
+-- the description of each row .............
+securitySystemHistoryEntry OBJECT-TYPE
+    SYNTAX SecuritySystemHistoryEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION "Entry containing historical data for a specific day."
+    INDEX { securitySystemHistoryDate }
+    ::= { securitySystemHistoryTable 1 }
 
-HistoricalDataEntry ::= SEQUENCE {
-
-  day        	INTEGER (1..365),
-  peopleEntered INTEGER,
-  peopleLeft  	INTEGER
-
+SecuritySystemHistoryEntry ::= SEQUENCE {
+    securitySystemHistoryDate     Integer32,
+    securitySystemHistoryEnter    Integer32,
+    securitySystemHistoryExit     Integer32
 }
 
-historicalDataTable OBJECT-TYPE
+securitySystemHistoryDate OBJECT-TYPE
+    SYNTAX Integer32 (1..365) -- GIVEN THAT THE DAY FROM 1 TO 365
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Day of the year for historical data entry."
+    ::= { securitySystemHistoryEntry 1 }
+	
+--The number of people that entered the room on that day. 
+securitySystemHistoryEnter OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Number of people that entered the room on the specified day."
+    ::= { securitySystemHistoryEntry 2 }
 
-  SYNTAX	Counter32
-  MAX-ACCESS	read-only
-  STATUS	current
-  DESCRIPTION
-    "A table containing historical data for each day of the year."
-  ::= { ip 4 }
-
-
-
-
-END
+-- The number of people that left the room on that day.
+securitySystemHistoryExit OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Number of people that left the room on the specified day."
+    ::= { securitySystemHistoryEntry 3 }
+------------------------------------------------END OF TABLE CODE ---------------------------
